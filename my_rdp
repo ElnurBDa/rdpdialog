@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# Function to display error message and exit
+display_error() {
+    dialog --title "Error" --msgbox "$1" 8 50
+    exit 1
+}
+
+# Function to display connection status
+display_connection_status() {
+    dialog --title "Connection Status" --msgbox "$1" 8 50
+}
+
+# Function to prompt for password
+prompt_password() {
+    dialog --clear --title "Password" \
+    --inputbox "Enter your password:" 10 30 2> "$tempfile"
+
+    password=$(cat "$tempfile")
+
+    if [ -z "$password" ]; then
+        display_error "Password cannot be empty!"
+    fi
+}
+
+# Function to prompt for IP address
+prompt_ip_address() {
+    dialog --clear --title "IP Address" \
+    --inputbox "Enter the IP address:" 10 30 2> "$tempfile"
+
+    ip_address=$(cat "$tempfile")
+
+    if [ -z "$ip_address" ]; then
+        display_error "IP Address cannot be empty!"
+    fi
+}
+
+# Function to prompt for username
+prompt_username() {
+    dialog --clear --title "Username" \
+    --inputbox "Enter your username:" 10 30 2> "$tempfile"
+
+    username=$(cat "$tempfile")
+
+    if [ -z "$username" ]; then
+        display_error "Username cannot be empty!"
+    fi
+}
+
+# Temporary file to store user input
+tempfile=$(mktemp /tmp/dialog.XXXXXX) || exit 1
+
+# Main menu
+while true; do
+    dialog --clear --backtitle "Remote Desktop Connection" \
+    --title "Main Menu" \
+    --menu "Choose an option:" 15 50 3 \
+    1 "Connect to Remote Desktop" \
+    2 "Exit" 2> "$tempfile"
+
+    choice=$(cat "$tempfile")
+
+    case $choice in
+        1)
+            prompt_username
+            prompt_password
+            prompt_ip_address
+            dialog --infobox "Connecting..." 5 50
+            xfreerdp /u:"$username" /p:"$password" /v:"$ip_address" /dynamic-resolution
+            display_connection_status "Connected to $ip_address"
+            ;;
+        2)
+	    clear
+            break
+            ;;
+        *)
+            display_error "Invalid option!"
+            ;;
+    esac
+done
+
+# Clean up temporary file
+rm -f "$tempfile"
+
